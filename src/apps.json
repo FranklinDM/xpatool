@@ -1,0 +1,37 @@
+{
+  "{8de7fcbb-c55c-4fbe-bfc5-fc555c87dbc4}": {
+    "name": "Pale Moon",
+    "code": "pm",
+    "default_max_version": "35.*"
+  },
+  "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}": {
+    "name": "Firefox",
+    "code": "fx",
+    "default_max_version": "56.*"
+  },
+  "{3550f703-e582-4d05-9a08-453d09bdfdc6}": {
+    "name": "Thunderbird",
+    "code": "tb",
+    "default_max_version": "52.*"
+  },
+  "{4523665a-317f-4a66-9376-3763d1ad1978}": {
+    "name": "Ambassador",
+    "code": "am",
+    "default_max_version": "1.*"
+  },
+  "{29877c1d-27df-4421-9a79-382c31470151}": {
+    "name": "Epyrus",
+    "code": "es",
+    "default_max_version": "2.*"
+  },
+  "{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}": {
+    "name": "SeaMonkey",
+    "code": "sm",
+    "default_max_version": "2.*"
+  },
+  "{a3210b97-8e8a-4737-9aa0-aa0e607640b9}": {
+    "name": "Borealis Navigator",
+    "code": "bn",
+    "default_max_version": "1.*"
+  }
+}
