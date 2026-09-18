@@ -3,6 +3,7 @@ import click
 
 from commands.build import build_cmd
 from commands.config import config_grp
+from commands.format import format_cmd
 from commands.list import list_cmd
 from commands.locale import locale_grp
 from commands.proxy import proxy_cmd
@@ -20,6 +21,7 @@ def cli() -> None:
 
 cli.add_command(list_cmd)
 cli.add_command(build_cmd)
+cli.add_command(format_cmd)
 cli.add_command(update_maxversions_cmd)
 cli.add_command(locale_grp)
 cli.add_command(proxy_cmd)
