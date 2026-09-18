@@ -41,7 +41,7 @@ runs:
         REF_TYPE: ${{ github.ref_type }}
         SHA: ${{ github.sha }}
       run: |
-        python "${{ github.action_path }}/src/xpat.py" -d "${{ inputs.source-dir }}" --build
+        python "${{ github.action_path }}/src/xpatool.py" build "${{ inputs.source-dir }}" -n "${{ inputs.package-name }}" --github-output
 
     - name: Upload XPI artifact
       uses: actions/upload-artifact@v6
