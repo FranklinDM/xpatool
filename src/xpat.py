@@ -11,7 +11,7 @@ from rich.table import Table
 from config import DEFAULT_KNOWN_APPS, load_config, save_config
 from core.locales import get_addon_locales, sync_locales
 from core.packager import build_xpi
-from core.proxies import generate_proxies
+from core.proxies import generate_proxies, get_default_proxies_dir
 from parsers.install_manifest import InstallManifestParser
 from utils.resolver import get_all_addons, resolve_addon_targets
 
@@ -281,7 +281,7 @@ def proxy_cmd(target: str | None, output_dir: str | None, all_addons: bool) -> N
 
     config = load_config()
     proxies_dir = (
-        output_dir or config.get("proxies_dir") or str(Path.cwd() / "_proxies")
+        output_dir or config.get("proxies_dir") or str(get_default_proxies_dir())
     )
 
     for addon_path in targets:
@@ -325,8 +325,9 @@ def config_list() -> None:
         console.print("  [dim](none configured)[/dim]")
 
     proxies_dir = config.get("proxies_dir", "")
+    default_display = str(get_default_proxies_dir().relative_to(Path.cwd()))
     console.print(
-        f"\n[bold]Default Proxies Dir:[/bold] {proxies_dir or '[dim](default: ./_proxies)[/dim]'}"
+        f"\n[bold]Default Proxies Dir:[/bold] {proxies_dir or f'[dim](default: ./{default_display})[/dim]'}"
     )
 
 
