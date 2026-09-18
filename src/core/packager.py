@@ -38,7 +38,6 @@ def build_xpi(
     else:
         final_version = f"{base_version}.{short_sha}"
         print(f"Non-tag build detected. Updating version to: {final_version}")
-        manifest.update_version(final_version)
 
     default_apps_mapping = {
         guid: info["code"] for guid, info in DEFAULT_KNOWN_APPS.items()
@@ -68,6 +67,9 @@ def build_xpi(
 
     print(f"Building: {xpi_filename}")
 
+    manifest_data = manifest.get_manifest_bytes(version=final_version)
+    manifest_resolved = manifest.manifest_path.resolve()
+
     with zipfile.ZipFile(xpi_filepath, "w", zipfile.ZIP_DEFLATED) as xpi:
         for file in src_path.rglob("*"):
             if not file.is_file():
@@ -76,8 +78,11 @@ def build_xpi(
                 continue
             if file.resolve() == xpi_filepath.resolve():
                 continue
-            arcname = file.relative_to(src_path)
-            xpi.write(file, arcname)
+            arcname = file.relative_to(src_path).as_posix()
+            if file.resolve() == manifest_resolved:
+                xpi.writestr(arcname, manifest_data)
+            else:
+                xpi.write(file, arcname)
 
     if write_github_output and "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out_file:

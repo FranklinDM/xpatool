@@ -1,5 +1,7 @@
-import xml.etree.ElementTree as ET
+import copy
 from pathlib import Path
+
+import lxml.etree as ET
 
 from models import AddonMetadata, TargetApplication
 
@@ -7,9 +9,6 @@ NS = {
     "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     "em": "http://www.mozilla.org/2004/em-rdf#",
 }
-
-ET.register_namespace("", "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-ET.register_namespace("em", "http://www.mozilla.org/2004/em-rdf#")
 
 
 class InstallManifestParser:
@@ -21,7 +20,12 @@ class InstallManifestParser:
                 f"install.rdf not found in {self.target_dir} or {self.target_dir / 'src'}"
             )
         self.manifest_path: Path = found_path
-        self.tree = ET.parse(self.manifest_path)
+        self._xml_parser = ET.XMLParser(
+            remove_comments=False,
+            resolve_entities=False,
+            strip_cdata=False,
+        )
+        self.tree = ET.parse(str(self.manifest_path), parser=self._xml_parser)
         self.root = self.tree.getroot()
 
     def _find_manifest_path(self, target_dir: Path) -> Path | None:
@@ -41,10 +45,10 @@ class InstallManifestParser:
         return self.manifest_path.parent
 
     def get_metadata(self) -> AddonMetadata:
-        addon_id_elem = self.root.find(".//em:id", NS)
-        version_elem = self.root.find(".//em:version", NS)
-        name_elem = self.root.find(".//em:name", NS)
-        type_elem = self.root.find(".//em:type", NS)
+        addon_id_elem = self.root.find(".//em:id", namespaces=NS)
+        version_elem = self.root.find(".//em:version", namespaces=NS)
+        name_elem = self.root.find(".//em:name", namespaces=NS)
+        type_elem = self.root.find(".//em:type", namespaces=NS)
 
         addon_id = (
             addon_id_elem.text.strip()
@@ -79,16 +83,16 @@ class InstallManifestParser:
 
     def get_target_applications(self) -> list[TargetApplication]:
         targets: list[TargetApplication] = []
-        for target_node in self.root.findall(".//em:targetApplication", NS):
-            desc = target_node.find("Description", NS)
+        for target_node in self.root.findall(".//em:targetApplication", namespaces=NS):
+            desc = target_node.find("Description", namespaces=NS)
             if desc is None:
-                desc = target_node.find("rdf:Description", NS)
+                desc = target_node.find("rdf:Description", namespaces=NS)
             if desc is None:
                 desc = target_node
 
-            id_el = desc.find("em:id", NS)
-            min_el = desc.find("em:minVersion", NS)
-            max_el = desc.find("em:maxVersion", NS)
+            id_el = desc.find("em:id", namespaces=NS)
+            min_el = desc.find("em:minVersion", namespaces=NS)
+            max_el = desc.find("em:maxVersion", namespaces=NS)
 
             guid = id_el.text.strip() if (id_el is not None and id_el.text) else ""
             min_v = min_el.text.strip() if (min_el is not None and min_el.text) else ""
@@ -108,40 +112,59 @@ class InstallManifestParser:
         self, version_updates: dict[str, str]
     ) -> list[tuple[str, str, str]]:
         changes: list[tuple[str, str, str]] = []
-        for target_node in self.root.findall(".//em:targetApplication", NS):
-            desc = target_node.find("Description", NS)
+        for target_node in self.root.findall(".//em:targetApplication", namespaces=NS):
+            desc = target_node.find("Description", namespaces=NS)
             if desc is None:
-                desc = target_node.find("rdf:Description", NS)
+                desc = target_node.find("rdf:Description", namespaces=NS)
             if desc is None:
                 desc = target_node
 
-            id_el = desc.find("em:id", NS)
+            id_el = desc.find("em:id", namespaces=NS)
             if id_el is None or not id_el.text:
                 continue
 
             guid = id_el.text.strip().lower()
             if guid in version_updates:
                 new_max = version_updates[guid]
-                max_el = desc.find("em:maxVersion", NS)
+                max_el = desc.find("em:maxVersion", namespaces=NS)
                 old_max = (
                     max_el.text.strip() if (max_el is not None and max_el.text) else ""
                 )
                 if max_el is None:
-                    max_el = ET.SubElement(
-                        desc, "{http://www.mozilla.org/2004/em-rdf#}maxVersion"
-                    )
-                max_el.text = new_max
-                changes.append((guid, old_max, new_max))
+                    max_el = ET.SubElement(desc, f"{{{NS['em']}}}maxVersion")
+                if old_max != new_max:
+                    max_el.text = new_max
+                    changes.append((guid, old_max, new_max))
 
         if changes:
             self.save()
         return changes
 
     def update_version(self, new_version: str) -> None:
-        version_elem = self.root.find(".//em:version", NS)
+        version_elem = self.root.find(".//em:version", namespaces=NS)
         if version_elem is not None:
             version_elem.text = new_version
             self.save()
 
+    def get_manifest_bytes(self, version: str | None = None) -> bytes:
+        if version:
+            cloned_tree = copy.deepcopy(self.tree)
+            version_elem = cloned_tree.getroot().find(".//em:version", namespaces=NS)
+            if version_elem is not None:
+                version_elem.text = version
+            return ET.tostring(
+                cloned_tree,
+                encoding="utf-8",
+                xml_declaration=True,
+                pretty_print=False,
+            )
+        with self.manifest_path.open("rb") as f:
+            return f.read()
+
     def save(self) -> None:
-        self.tree.write(self.manifest_path, encoding="utf-8", xml_declaration=True)
+        self.tree.write(
+            str(self.manifest_path),
+            encoding="utf-8",
+            xml_declaration=True,
+            pretty_print=False,
+        )

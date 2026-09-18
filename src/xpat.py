@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import sys
-import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
 import click
+import lxml.etree as ET
 from rich.console import Console
 from rich.table import Table
 
@@ -152,7 +152,7 @@ def build_cmd(
                 f"[green]✓ Built:[/green] {xpi_path} (v{final_ver}){pre_label}"
             )
             success_count += 1
-        except (OSError, ValueError, ET.ParseError, zipfile.BadZipFile) as e:
+        except (OSError, ValueError, ET.LxmlError, zipfile.BadZipFile) as e:
             console.print(f"[red]✗ Build failed for {addon_path}:[/red] {e}")
 
     if success_count == 0:
@@ -192,7 +192,7 @@ def update_maxversions_cmd(target: str | None, all_addons: bool) -> None:
                     console.print(f"    • {guid}: {old_v} -> {new_v}")
             else:
                 console.print(f"[dim]• {addon_name}: All maxVersions up to date.[/dim]")
-        except (OSError, ET.ParseError, ValueError) as e:
+        except (OSError, ET.LxmlError, ValueError) as e:
             console.print(f"[red]✗ Failed to update {addon_path}:[/red] {e}")
 
 
@@ -260,7 +260,7 @@ def sync_locales_cmd(
                 console.print(
                     f"[dim]• {addon_name}: All locales up to date with {base_locale}.[/dim]"
                 )
-        except (OSError, ET.ParseError, ValueError) as e:
+        except (OSError, ET.LxmlError, ValueError) as e:
             console.print(f"[red]✗ Failed to sync locales for {addon_path}:[/red] {e}")
 
 
@@ -297,7 +297,7 @@ def sort_locales_cmd(target: str | None, all_addons: bool) -> None:
                 console.print(
                     f"[dim]• {addon_name}: No locale files found to sort.[/dim]"
                 )
-        except (OSError, ET.ParseError, ValueError) as e:
+        except (OSError, ET.LxmlError, ValueError) as e:
             console.print(f"[red]✗ Failed to sort locales for {addon_path}:[/red] {e}")
 
 
@@ -347,7 +347,7 @@ def proxy_cmd(target: str | None, output_dir: str | None, all_addons: bool) -> N
                 proxies_dir=proxies_dir,
             )
             console.print(f"[green]✓ Proxy created:[/green] {proxy_file} -> {content}")
-        except (OSError, ET.ParseError, ValueError) as e:
+        except (OSError, ET.LxmlError, ValueError) as e:
             console.print(
                 f"[red]✗ Failed to generate proxy for {addon_path}:[/red] {e}"
             )
