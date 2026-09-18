@@ -196,8 +196,13 @@ def update_maxversions_cmd(target: str | None, all_addons: bool) -> None:
             console.print(f"[red]✗ Failed to update {addon_path}:[/red] {e}")
 
 
-@cli.command(
-    name="sync-locales",
+@cli.group(name="locale", help="Manage and synchronize add-on translation locales.")
+def locale_grp() -> None:
+    pass
+
+
+@locale_grp.command(
+    name="sync",
     help="Synchronize missing translation keys with base locale.",
 )
 @click.argument("target", required=False)
@@ -221,7 +226,7 @@ def update_maxversions_cmd(target: str | None, all_addons: bool) -> None:
     is_flag=True,
     help="Sync locales for all discovered add-ons.",
 )
-def sync_locales_cmd(
+def locale_sync_cmd(
     target: str | None, base_locale: str, sort_entries: bool, all_addons: bool
 ) -> None:
     targets = resolve_addon_targets(target=target, all_addons=all_addons)
@@ -264,8 +269,8 @@ def sync_locales_cmd(
             console.print(f"[red]✗ Failed to sync locales for {addon_path}:[/red] {e}")
 
 
-@cli.command(
-    name="sort-locales",
+@locale_grp.command(
+    name="sort",
     help="Sort translation keys in .dtd and .properties files alphabetically.",
 )
 @click.argument("target", required=False)
@@ -276,7 +281,7 @@ def sync_locales_cmd(
     is_flag=True,
     help="Sort locales for all discovered add-ons.",
 )
-def sort_locales_cmd(target: str | None, all_addons: bool) -> None:
+def locale_sort_cmd(target: str | None, all_addons: bool) -> None:
     targets = resolve_addon_targets(target=target, all_addons=all_addons)
     if not targets:
         console.print("[red]No target add-ons found for sorting locales.[/red]")
