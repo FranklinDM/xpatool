@@ -68,6 +68,25 @@ class PropertiesParser:
         )
         self.keys[key] = value
 
+    def sort_properties(self) -> None:
+        first_prop_idx = -1
+        for i, entry in enumerate(self.entries):
+            if entry["type"] == "property":
+                first_prop_idx = i
+                break
+
+        if first_prop_idx == -1:
+            return
+
+        header_entries = self.entries[:first_prop_idx]
+        prop_entries: list[PropertyEntry] = []
+        for entry in self.entries[first_prop_idx:]:
+            if entry["type"] == "property":
+                prop_entries.append(entry)
+
+        prop_entries.sort(key=lambda e: e.get("key", "").lower())
+        self.entries = list(header_entries) + prop_entries
+
     def save(self, filepath: str | Path | None = None) -> None:
         path = Path(filepath) if filepath else self.filepath
         path.parent.mkdir(parents=True, exist_ok=True)

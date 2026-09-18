@@ -71,10 +71,38 @@ class DtdParser:
         )
         self.keys[name] = value
 
+    def sort_entities(self) -> None:
+        first_entity_idx = -1
+        for i, entry in enumerate(self.entities):
+            if entry["type"] == "entity":
+                first_entity_idx = i
+                break
+
+        if first_entity_idx == -1:
+            return
+
+        header_entries = self.entities[:first_entity_idx]
+        entity_entries: list[DtdEntry] = []
+        for entry in self.entities[first_entity_idx:]:
+            if entry["type"] == "entity":
+                name = entry.get("name", "")
+                value = entry.get("value", "")
+                val_escaped = value.replace('"', "&quot;")
+                entry["raw"] = f'<!ENTITY {name} "{val_escaped}">\n'
+                entity_entries.append(entry)
+
+        entity_entries.sort(key=lambda e: e.get("name", "").lower())
+        self.entities = list(header_entries) + entity_entries
+
     def save(self, filepath: str | Path | None = None) -> None:
         path = Path(filepath) if filepath else self.filepath
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8", newline="\n") as f:
             for entry in self.entities:
-                if entry["type"] in ("comment", "raw") or entry["type"] == "entity":
+                if entry["type"] in ("comment", "raw"):
                     f.write(entry["raw"])
+                elif entry["type"] == "entity":
+                    raw = entry.get("raw", "")
+                    if not raw.endswith("\n"):
+                        raw += "\n"
+                    f.write(raw)

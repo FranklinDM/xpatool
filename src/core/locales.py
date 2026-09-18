@@ -21,7 +21,9 @@ def get_addon_locales(source_dir: Path) -> list[str]:
     return sorted(result)
 
 
-def sync_locales(source_dir: Path, base_locale: str = "en-US") -> LocaleSyncReport:
+def sync_locales(
+    source_dir: Path, base_locale: str = "en-US", sort: bool = False
+) -> LocaleSyncReport:
     manifest_path = find_chrome_manifest(source_dir)
     if not manifest_path:
         return {}
@@ -59,19 +61,59 @@ def sync_locales(source_dir: Path, base_locale: str = "en-US") -> LocaleSyncRepo
                 target_file = target_dir / rel_path
 
                 if file.suffix == ".dtd":
-                    added = _sync_dtd_file(file, target_file)
-                    if added:
+                    added = _sync_dtd_file(file, target_file, sort=sort)
+                    if added or sort:
                         report[loc][str(rel_path)] = added
 
                 elif file.suffix == ".properties":
-                    added = _sync_properties_file(file, target_file)
-                    if added:
+                    added = _sync_properties_file(file, target_file, sort=sort)
+                    if added or sort:
                         report[loc][str(rel_path)] = added
+
+    if sort:
+        sort_locales(source_dir)
 
     return report
 
 
-def _sync_dtd_file(base_file: Path, target_file: Path) -> list[str]:
+def sort_locales(source_dir: Path) -> dict[str, list[str]]:
+    manifest_path = find_chrome_manifest(source_dir)
+    if not manifest_path:
+        return {}
+
+    parser = ChromeManifestParser(manifest_path)
+    sorted_files: dict[str, list[str]] = {}
+
+    for entry in parser.locales:
+        loc = entry["locale"]
+        loc_path = Path(entry["resolved_path"])
+        if not loc_path.is_dir():
+            continue
+
+        for file in loc_path.rglob("*"):
+            if not file.is_file():
+                continue
+
+            rel_path = str(file.relative_to(loc_path))
+            if file.suffix == ".dtd":
+                dtd = DtdParser(file)
+                dtd.sort_entities()
+                dtd.save()
+                if loc not in sorted_files:
+                    sorted_files[loc] = []
+                sorted_files[loc].append(rel_path)
+            elif file.suffix == ".properties":
+                prop = PropertiesParser(file)
+                prop.sort_properties()
+                prop.save()
+                if loc not in sorted_files:
+                    sorted_files[loc] = []
+                sorted_files[loc].append(rel_path)
+
+    return sorted_files
+
+
+def _sync_dtd_file(base_file: Path, target_file: Path, sort: bool = False) -> list[str]:
     base_dtd = DtdParser(base_file)
     target_dtd = DtdParser(target_file) if target_file.is_file() else DtdParser("")
 
@@ -81,12 +123,17 @@ def _sync_dtd_file(base_file: Path, target_file: Path) -> list[str]:
             target_dtd.add_entity(key, val)
             missing.append(key)
 
-    if missing:
+    if sort:
+        target_dtd.sort_entities()
+
+    if missing or sort:
         target_dtd.save(target_file)
     return missing
 
 
-def _sync_properties_file(base_file: Path, target_file: Path) -> list[str]:
+def _sync_properties_file(
+    base_file: Path, target_file: Path, sort: bool = False
+) -> list[str]:
     base_prop = PropertiesParser(base_file)
     target_prop = (
         PropertiesParser(target_file) if target_file.is_file() else PropertiesParser("")
@@ -98,6 +145,9 @@ def _sync_properties_file(base_file: Path, target_file: Path) -> list[str]:
             target_prop.add_property(key, val)
             missing.append(key)
 
-    if missing:
+    if sort:
+        target_prop.sort_properties()
+
+    if missing or sort:
         target_prop.save(target_file)
     return missing
