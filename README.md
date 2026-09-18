@@ -1,79 +1,123 @@
-# build-xpi
+# Cross Platform Add-on Tool (XPATool)
 
-GitHub Action to build `.xpi` packages for UXP-based applications (Pale Moon, Ambassador, Epyrus, and applications using the Firefox or Thunderbird GUID). It pulls metadata out of `install.rdf`, tags the filename with the target app codes, handles dev vs release versioning, and zips everything up cleanly.
+CLI tool for developing and maintaining UXP add-ons.
 
-## What it does
+Handles packaging `.xpi` files, formatting XUL/XML markup while preserving DTD entities, synchronizing locale files, updating target application max versions, and generating profile proxy files for development.
 
-1. **Builds the filename from your manifest:** Reads the version and target applications directly from `install.rdf`.
+## Requirements
 
-- Maps application GUIDs to short codes:
-  - Pale Moon: `pm`
-  - Firefox: `fx`
-  - Thunderbird: `tb`
-  - Ambassador: `am`
-  - Epyrus: `es`
-- Example output: `sample-package-1.0.0-pm+tb+am+es.xpi`
+- Python 3.10+
+- Dependencies listed in `requirements.txt` (`click`, `rich`, `lxml`)
 
-2. **Handles dev builds automatically:**
+Install dependencies:
 
-- If triggered by a Git tag: uses the version in `install.rdf` as-is.
-- If triggered by a branch push or PR: appends the short commit hash (`1.0.0.a1b2c3d`) to both the file name and the `install.rdf` inside the package.
+```bash
+pip install -r requirements.txt
+```
 
-3. **Uploads build artifact:** The `.xpi` is automatically uploaded as a workflow artifact.
+## Commands
 
-4. **Root or `src/` builds:** Works whether your addon files live in a `src/` folder or right at the root of the repo.
+### `list`
 
-## Inputs
+Scan configured directories and list all discovered add-ons.
 
-| Name           | Required | Default | Description                                                        |
-| -------------- | -------- | ------- | ------------------------------------------------------------------ |
-| `package-name` | yes      |         | Base name of the output file (e.g. `sample-package`).                   |
-| `source-dir`   | no       | `src`   | Directory where `install.rdf` lives. Use `.` if it is at the root. |
+```bash
+python src/xpatool.py list
+python src/xpatool.py list --rescan
+```
 
-## Outputs
+### `build`
 
-| Name           | Description                                 |
-| -------------- | ------------------------------------------- |
-| `xpi-filename` | The exact filename of the generated `.xpi`. |
+Package an add-on directory into a `.xpi` file. Reads `install.rdf`, appends target application short codes to the output filename (e.g. `-pm+tb`), and injects Git commit hashes for development builds.
 
-## How to set this up
+```bash
+# Build specific directory or add-on by ID/name
+python src/xpatool.py build path/to/addon
+python src/xpatool.py build sample-addon
 
-Reference this action from your GitHub Actions workflow. See the sample `package.yml` below:
+# Build all discovered add-ons
+python src/xpatool.py build --all
 
-```yml
-name: Build and Release XPI Package
+# Build as tagged release version
+python src/xpatool.py build path/to/addon --tag
 
-on:
-  push:
-    branches: [main, master]
-    tags: ["v*", "*.*.*"]
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:
+# Specify custom output directory or base name
+python src/xpatool.py build path/to/addon -o ./dist -n custom-name
+```
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
+### `format`
 
-      - name: Build XPI
-        id: builder
-        uses: FranklinDM/build-xpi@main # or @v1
-        with:
-          package-name: "sample-package"
-          # source-dir: "." # Uncomment if files are at root, defaults to "src"
+Format XUL, XML, XHTML, and RDF files. Preserves DOCTYPE declarations, DTD entity references, and attribute structures without breaking XML validity.
 
-      # Optional: use if you want to automate release creation and publication too.
-      - name: Create Release
-        if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v3
-        with:
-          files: ${{ steps.builder.outputs.xpi-filename }}
-          name: ${{ github.ref_name }}
-          generate_release_notes: true
-          prerelease: ${{ steps.builder.outputs.is-prerelease }}
+```bash
+# Format specific file or directory
+python src/xpatool.py format chrome/content/overlay.xul -w
+python src/xpatool.py format src/ -w
+
+# Format all discovered add-ons
+python src/xpatool.py format --all -w
+
+# Check formatting without writing changes (exits with non-zero status if unformatted)
+python src/xpatool.py format src/ --check
+
+# Custom indentation and line width
+python src/xpatool.py format src/ -w --tab-width 2 --print-width 120
+```
+
+### `locale`
+
+Manage and synchronize translation files (`.dtd` and `.properties`).
+
+#### `locale sync`
+
+Sync missing translation keys from a base locale (`en-US` by default) into all other locale folders declared in `chrome.manifest`.
+
+```bash
+python src/xpatool.py locale sync path/to/addon
+python src/xpatool.py locale sync --all --sort
+python src/xpatool.py locale sync path/to/addon -b en-US
+```
+
+#### `locale sort`
+
+Alphabetically sort translation keys in `.dtd` and `.properties` files.
+
+```bash
+python src/xpatool.py locale sort path/to/addon
+python src/xpatool.py locale sort --all
+```
+
+### `update-maxversions`
+
+Update `<em:maxVersion>` values in `install.rdf` according to configured target application definitions.
+
+```bash
+python src/xpatool.py update-maxversions path/to/addon
+python src/xpatool.py update-maxversions --all
+```
+
+### `proxy`
+
+Generate pointer proxy files pointing to add-on source directories for live profile testing without packaging.
+
+```bash
+python src/xpatool.py proxy path/to/addon
+python src/xpatool.py proxy --all
+python src/xpatool.py proxy path/to/addon -o ~/.moonchild\ productions/pale\ moon/profiles/dev/extensions
+```
+
+### `config`
+
+Manage global directories and defaults stored in `~/.config/xpatool/config.json`.
+
+```bash
+# Show current configuration
+python src/xpatool.py config list
+
+# Add or remove add-on search directories
+python src/xpatool.py config add-dir /path/to/addons
+python src/xpatool.py config remove-dir /path/to/addons
+
+# Set default directory for generated proxy files
+python src/xpatool.py config set-proxies-dir /path/to/profile/extensions
 ```
