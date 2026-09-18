@@ -10,7 +10,7 @@ from utils.resolver import get_all_addons
 console = Console()
 
 
-@click.group(name="config", help="Manage XPAT configuration.")
+@click.group(name="config", help="Manage XPATool configuration.")
 def config_grp() -> None:
     pass
 

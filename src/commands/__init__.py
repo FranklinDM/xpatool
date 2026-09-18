@@ -1,1 +1,1 @@
-"""XPAT CLI command modules."""
+"""XPATool CLI command modules."""

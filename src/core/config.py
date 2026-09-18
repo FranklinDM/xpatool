@@ -4,8 +4,8 @@ from typing import cast
 
 from models import AddonMetadata, KnownAppInfo, WorkspaceConfig
 
-DEFAULT_CONFIG_PATH = Path.home() / ".config" / "xpat" / "config.json"
-DEFAULT_CACHE_PATH = Path.home() / ".config" / "xpat" / "cache.json"
+DEFAULT_CONFIG_PATH = Path.home() / ".config" / "xpatool" / "config.json"
+DEFAULT_CACHE_PATH = Path.home() / ".config" / "xpatool" / "cache.json"
 APPS_JSON_PATH = Path(__file__).parent / "apps.json"
 
 

@@ -25,7 +25,7 @@ def list_cmd(rescan: bool) -> None:
     if not dirs:
         console.print(
             "[yellow]No add-on directories configured.[/yellow]\n"
-            "Use [bold]xpat config add-dir <path>[/bold] to add directories."
+            "Use [bold]xpatool config add-dir <path>[/bold] to add directories."
         )
         return
 

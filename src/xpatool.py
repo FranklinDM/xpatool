@@ -10,9 +10,9 @@ from commands.update_maxversions import update_maxversions_cmd
 
 
 @click.group(
-    name="xpat",
+    name="xpatool",
     context_settings={"help_option_names": ["-h", "--help"]},
-    help="XPAT — Cross Platform Add-on Tools",
+    help="XPATool — Cross Platform Add-on Tool",
 )
 def cli() -> None:
     pass
