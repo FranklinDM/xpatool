@@ -3,7 +3,7 @@ import re
 import zipfile
 from pathlib import Path
 
-from config import DEFAULT_KNOWN_APPS
+from core.config import DEFAULT_KNOWN_APPS
 from parsers.install_manifest import InstallManifestParser
 
 

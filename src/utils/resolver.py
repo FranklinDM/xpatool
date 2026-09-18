@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from config import load_addon_cache, load_config, save_addon_cache
+from core.config import load_addon_cache, load_config, save_addon_cache
 from models import AddonMetadata
 from parsers.install_manifest import InstallManifestParser
 from utils.scanner import scan_addons_in_directories

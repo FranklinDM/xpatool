@@ -1,0 +1,1 @@
+"""XPAT CLI command modules."""
