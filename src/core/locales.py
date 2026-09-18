@@ -78,9 +78,7 @@ def _sync_dtd_file(base_file: Path, target_file: Path) -> list[str]:
     missing: list[str] = []
     for key, val in base_dtd.keys.items():
         if key not in target_dtd.keys:
-            target_dtd.add_entity(
-                key, val, comment=f"MISSING TRANSLATION (en-US fallback): {key}"
-            )
+            target_dtd.add_entity(key, val)
             missing.append(key)
 
     if missing:
@@ -97,9 +95,7 @@ def _sync_properties_file(base_file: Path, target_file: Path) -> list[str]:
     missing: list[str] = []
     for key, val in base_prop.keys.items():
         if key not in target_prop.keys:
-            target_prop.add_property(
-                key, val, comment=f"MISSING TRANSLATION (en-US fallback): {key}"
-            )
+            target_prop.add_property(key, val)
             missing.append(key)
 
     if missing:
